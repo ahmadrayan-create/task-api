@@ -1,5 +1,6 @@
 from typing import List
 from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from database import create_db_and_tables, get_session, seed_if_empty
@@ -8,7 +9,7 @@ from models import Task
 app = FastAPI(
     title="Task API",
     description="SQLite-backed CRUD to-do list",
-    version="1.0.0",
+    version="2.0.0",
 )
 
 
@@ -20,7 +21,7 @@ def on_startup():
 
 @app.get("/")
 def root():
-  return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
+  return {"name": "Task API", "version": "2.0", "endpoints": ["/tasks"]}
 
 
 @app.get("/health")
@@ -37,5 +38,23 @@ def get_tasks(session: Session = Depends(get_session)):
 def get_task(task_id: int, session: Session = Depends(get_session)):
   task = session.get(Task, task_id)
   if not task:
-    raise HTTPException(status_code=404, detail={"error": "Task not found"})
+    raise HTTPException(
+        status_code=404, detail={"error": f"Task {task_id} not found"}
+    )
   return task
+
+
+class TaskCreate(BaseModel):
+  title: str
+
+
+@app.post("/tasks", status_code=201, response_model=Task)
+def create_task(task_in: TaskCreate, session: Session = Depends(get_session)):
+  if not task_in.title or not task_in.title.strip():
+    raise HTTPException(status_code=400, detail="title cannot be empty")
+
+  db_task = Task(title=task_in.title.strip(), done=False)
+  session.add(db_task)
+  session.commit()
+  session.refresh(db_task)
+  return db_task
