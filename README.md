@@ -79,8 +79,4 @@ id title      done
 ---
 
 ## Swagger UI Verification
-
-```
-<img width="1893" height="864" alt="image" src="https://github.com/user-attachments/assets/6737d423-a821-4f02-8bb3-07de5349406d" />
-
-```
+<img width="1893" height="864" alt="image" src="https://github.com/user-attachments/assets/607dbf6c-650b-4c55-b3c0-e9d5dc0135b9" />
