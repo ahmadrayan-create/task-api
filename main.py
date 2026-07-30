@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -58,3 +58,45 @@ def create_task(task_in: TaskCreate, session: Session = Depends(get_session)):
   session.commit()
   session.refresh(db_task)
   return db_task
+
+
+class TaskUpdate(BaseModel):
+  title: Optional[str] = None
+  done: Optional[bool] = None
+
+
+@app.put("/tasks/{task_id}", response_model=Task)
+def update_task(
+    task_id: int, task_in: TaskUpdate, session: Session = Depends(get_session)
+):
+  db_task = session.get(Task, task_id)
+  if not db_task:
+    raise HTTPException(
+        status_code=404, detail={"error": f"Task {task_id} not found"}
+    )
+
+  if task_in.title is not None:
+    if not task_in.title.strip():
+      raise HTTPException(status_code=400, detail="title cannot be empty")
+    db_task.title = task_in.title.strip()
+
+  if task_in.done is not None:
+    db_task.done = task_in.done
+
+  session.add(db_task)
+  session.commit()
+  session.refresh(db_task)
+  return db_task
+
+
+@app.delete("/tasks/{task_id}", status_code=204)
+def delete_task(task_id: int, session: Session = Depends(get_session)):
+  db_task = session.get(Task, task_id)
+  if not db_task:
+    raise HTTPException(
+        status_code=404, detail={"error": f"Task {task_id} not found"}
+    )
+
+  session.delete(db_task)
+  session.commit()
+  return None
