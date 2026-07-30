@@ -44,3 +44,18 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+class TaskCreate(BaseModel):
+    title: str
+
+@app.post("/tasks", status_code=201, response_model=Task)
+def create_task(task_in: TaskCreate):
+    if not task_in.title or not task_in.title.strip():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="title is required and cannot be empty")
+
+    new_id = max((t.id for t in tasks), default=0) + 1
+    new_task = Task(id=new_id, title=task_in.title.strip(), done=False)
+    tasks.append(new_task)
+    return new_task
